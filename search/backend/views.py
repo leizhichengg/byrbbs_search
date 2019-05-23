@@ -55,7 +55,10 @@ class SearchView(View):
                         "article_title": {},
                         "article_content": {},
                     }
-                }
+                },
+                "sort": [
+                    { "article_createtime" : "desc" }
+                ]
             }
         )
 
