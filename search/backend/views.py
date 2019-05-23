@@ -1,10 +1,11 @@
 from django.shortcuts import render
 import json
 from django.views.generic.base import View
-from search.backend.models import ByrArticleIndex
+# from search.backend.models import ByrArticleIndex
 from django.http import HttpResponse
 from elasticsearch import Elasticsearch
 from django.views.generic.base import RedirectView
+from django.http import JsonResponse
 
 client = Elasticsearch(hosts=["localhost"])
 
@@ -22,12 +23,14 @@ class SearchSuggestView(View):
 
 class SearchView(View):
     
-    def get(self, request):
+    def get(request):
         # 获取搜索关键字
         key_words = request.GET.get("q", "")
+        # key_words = "test"
 
         # 当前要获取第几页的数据
         page = request.GET.get("p", "1")
+        # page = 1
         try:
             page = int(page)
         except BaseException:
@@ -89,10 +92,19 @@ class SearchView(View):
         else:
             page_nums = int(total_nums / 20)
         
+        response = {}
+        response['page'] = page
+        response['all_hits'] = hit_list
+        response['key_words'] = key_words
+        response['total_nums'] = total_nums
+        response['page_nums'] = page_nums
 
-        return render(request, "result.html", {"page": page,
-                                               "all_hits": hit_list,
-                                               "key_words": key_words,
-                                               "total_nums": total_nums,
-                                               "page_nums": page_nums,
-                                               })
+        return JsonResponse(response)
+
+
+        # return render(request, "index.html", {"page": page,
+        #                                        "all_hits": hit_list,
+        #                                        "key_words": key_words,
+        #                                        "total_nums": total_nums,
+        #                                        "page_nums": page_nums,
+        #                                        })
