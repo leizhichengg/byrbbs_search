@@ -11,6 +11,7 @@ client = Elasticsearch(hosts=["localhost"])
 
 # Create your views here.
 
+
 class IndexView(View):
     # 搜索排行榜
     pass
@@ -22,22 +23,22 @@ class SearchSuggestView(View):
 
 
 class SearchView(View):
-    
+
     def get(request):
         # 获取搜索关键字
         key_words = request.GET.get("q", "")
-        # key_words = "test"
 
         # 当前要获取第几页的数据
         page = request.GET.get("p", "1")
-        # page = 1
         try:
             page = int(page)
         except BaseException:
             page = 1
         response = []
+
+        # 调用elasticseach搜索结果
         response = client.search(
-            index = "byrbbs",
+            index="byrbbs",
             request_timeout=60,
             body={
                 "query": {
@@ -57,22 +58,25 @@ class SearchView(View):
                     }
                 },
                 "sort": [
-                    { "article_createtime" : "desc" }
+                    {"article_createtime": "desc"},
+                    {"_score": "desc"}
                 ]
             }
         )
 
+        # hit_list包含所有搜索结果
         hit_list = []
-
         for hit in response['hits']['hits']:
             hit_dict = {}
             try:
                 if "article_title" in hit['highlight']:
-                    hit_dict["article_title"] = "".join(hit["highlight"]["article_title"])
+                    hit_dict["article_title"] = "".join(
+                        hit["highlight"]["article_title"])
                 else:
                     hit_dict["article_title"] = hit["_source"]["article_title"]
                 if "article_content" in hit['highlight']:
-                    hit_dict["article_content"] = "".join(hit["highlight"]["article_content"])
+                    hit_dict["article_content"] = "".join(
+                        hit["highlight"]["article_content"])
                 else:
                     hit_dict["article_content"] = hit["_source"]["article_content"]
                 hit_dict["article_createtime"] = hit["_source"]["article_createtime"]
@@ -84,9 +88,8 @@ class SearchView(View):
                 hit_list.append(hit_dict)
             except:
                 pass
-            
 
-            
+        # 结果总数
         total_nums = int(response['hits']['total'])
 
         # 计算出总页数
@@ -94,7 +97,7 @@ class SearchView(View):
             page_nums = int(total_nums / 20) + 1
         else:
             page_nums = int(total_nums / 20)
-        
+
         response = {}
         response['page'] = page
         response['all_hits'] = hit_list
@@ -103,7 +106,6 @@ class SearchView(View):
         response['page_nums'] = page_nums
 
         return JsonResponse(response)
-
 
         # return render(request, "index.html", {"page": page,
         #                                        "all_hits": hit_list,
