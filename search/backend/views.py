@@ -44,7 +44,7 @@ class SearchView(View):
         key_words = request.GET.get("q", "")
 
         # 实现搜索关键词keyword加1操作
-        r.zincrby("search_keywords_set", 1,key_words)
+        r.zincrby("search_keywords_set", 1, key_words)
         # 获取topn个搜索词
         topn_search_clean = []
         topn_search = r.zrevrangebyscore(
