@@ -6,8 +6,11 @@ from django.http import HttpResponse
 from elasticsearch import Elasticsearch
 from django.views.generic.base import RedirectView
 from django.http import JsonResponse
+import redis
 
 client = Elasticsearch(hosts=["localhost"])
+pool = redis.ConnectionPool(host='localhost',port=6379,db=0)
+r = redis.StrictRedis(connection_pool=pool)
 
 # Create your views here.
 
@@ -15,6 +18,18 @@ client = Elasticsearch(hosts=["localhost"])
 class IndexView(View):
     # 搜索排行榜
     pass
+    # def get(request):
+    #     topn_search_clean = []
+    #     topn_search = redis_cli.zrevrangebyscore(
+    #         "search_keywords_set", "+inf", "-inf", start=0, num=5)
+    #     for topn_key in topn_search:
+    #         topn_key = str(topn_key, encoding="utf-8")
+    #         topn_search_clean.append(topn_key)
+    #     topn_search = topn_search_clean
+    #     response = {}
+    #     response['topn_search'] = topn_search
+    #     return JsonResponse(response)
+        # return render(request, "index.html", {"topn_search": topn_search})
 
 
 class SearchSuggestView(View):
@@ -27,6 +42,17 @@ class SearchView(View):
     def get(request):
         # 获取搜索关键字
         key_words = request.GET.get("q", "")
+
+        # 实现搜索关键词keyword加1操作
+        r.zincrby("search_keywords_set", 1,key_words)
+        # 获取topn个搜索词
+        topn_search_clean = []
+        topn_search = r.zrevrangebyscore(
+            "search_keywords_set", "+inf", "-inf", start=0, num=5)
+        for topn_key in topn_search:
+            topn_key = str(topn_key, encoding="utf-8")
+            topn_search_clean.append(topn_key)
+        topn_search = topn_search_clean
 
         # 当前要获取第几页的数据
         page = request.GET.get("p", "1")
@@ -104,6 +130,7 @@ class SearchView(View):
         response['key_words'] = key_words
         response['total_nums'] = total_nums
         response['page_nums'] = page_nums
+        response['topn_search'] = topn_search
 
         return JsonResponse(response)
 

@@ -8,7 +8,7 @@ import MySQLdb
 
 class ByrArticleSpider(scrapy.Spider):
     pipeline = ['ElasticsearchPipeline']
-    name = "byr_article"
+    name = "byr_article_add"
     allowed_domains = ["bbs.byr.cn"]
     start_urls = ["https://bbs.byr.cn"]
     article_per_list = 30
@@ -48,6 +48,7 @@ class ByrArticleSpider(scrapy.Spider):
         first_list = response._get_url()
         for i in range(1,total_num+1):
             crawl_list_url = first_list+'?p='+str(i)
+            # print(crawl_list_url)
             yield scrapy.Request(crawl_list_url, meta={'cookiejar': response.meta['cookiejar'],'item':response.meta['item']}, headers=HEADERS,callback=self.parse_article_list)
 
 
@@ -58,24 +59,38 @@ class ByrArticleSpider(scrapy.Spider):
         top_section_name = response.meta['item']['top_section_name']
         section_name = response.meta['item']['section_name']
         sel_article = response.xpath('//*[@class="b-content"]/table/tbody/tr')
-        article_url = sel_article.xpath('td[2]/a/@href').extract()
-        article_title = sel_article.xpath('td[2]/a/text()').extract()
-        article_createtime = sel_article.xpath('td[3]/text()').extract()
-        article_author = sel_article.xpath('td[4]/a/text()').extract()
-        article_comment = sel_article.xpath('td[5]/text()').extract()
 
-        # 处理列表的每一行，即每一篇文章的信息，存入item
-        for index, url in enumerate(article_url):
-            item = ByrArticleItem()
-            item['top_section_name'] = top_section_name
-            item['section_name'] = section_name
-            item['article_title'] = article_title[index]
-            item['article_url'] = response.urljoin(article_url[index])
-            item['article_createtime'] = article_createtime[index]
-            item['article_author'] = article_author[index]
-            item['article_comment'] = article_comment[index]
-            yield scrapy.Request(item['article_url'], meta={'cookiejar': response.meta['cookiejar'],'item': item}, headers=HEADERS,callback=self.parse_article_content)
-            # yield item
+        article_createtime = sel_article.xpath('td[3]/text()').extract()
+        # if (article_createtime[0] == "2015-07-18")
+        # print(article_createtime[0])
+        last_date = "2018-05-20"
+        if (article_createtime[0] < last_date):
+            pass
+        else:
+            article_url = sel_article.xpath('td[2]/a/@href').extract()
+            article_title = sel_article.xpath('td[2]/a/text()').extract()
+            # article_createtime = sel_article.xpath('td[3]/text()').extract()
+            # print(article_createtime[0])
+            article_author = sel_article.xpath('td[4]/a/text()').extract()
+            article_comment = sel_article.xpath('td[5]/text()').extract()
+
+            # 处理列表的每一行，即每一篇文章的信息，存入item
+            for index, url in enumerate(article_url):
+                item = ByrArticleItem()
+                item['top_section_name'] = top_section_name
+                item['section_name'] = section_name
+                item['article_title'] = article_title[index]
+                item['article_url'] = response.urljoin(article_url[index])
+                item['article_createtime'] = article_createtime[index]
+                item['article_author'] = article_author[index]
+                item['article_comment'] = article_comment[index]
+                # print(len(article_createtime))
+                for date in article_createtime:
+                    if (date < last_date):
+                        pass
+                    else:
+                        yield scrapy.Request(item['article_url'], meta={'cookiejar': response.meta['cookiejar'],'item': item}, headers=HEADERS,callback=self.parse_article_content)
+                    yield item
 
     # 处理文章主体内容
     def parse_article_content(self, response):

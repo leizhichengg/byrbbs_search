@@ -13,7 +13,7 @@ class ArticleType(DocType):
     section_name = Text(analyzer="ik_smart")
     article_title = Text(analyzer="ik_smart")
     article_url = Keyword()
-    article_createtime = Date()
+    article_createtime = Text()
     url_object_id = Keyword()
     article_comment = Integer()
     article_author = Text(analyzer="ik_smart")
@@ -21,7 +21,7 @@ class ArticleType(DocType):
 
     class Meta:
         # 索引名称和文档名称
-        index = "byrbbs"
+        index = "byrbbstest"
         doc_type = "article"
 
 
