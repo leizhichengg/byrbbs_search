@@ -9,7 +9,7 @@ from django.http import JsonResponse
 import redis
 
 client = Elasticsearch(hosts=["localhost"])
-pool = redis.ConnectionPool(host='localhost',port=6379,db=0)
+pool = redis.ConnectionPool(host='localhost', port=6379, db=0)
 r = redis.StrictRedis(connection_pool=pool)
 
 # Create your views here.
@@ -29,7 +29,7 @@ class IndexView(View):
     #     response = {}
     #     response['topn_search'] = topn_search
     #     return JsonResponse(response)
-        # return render(request, "index.html", {"topn_search": topn_search})
+    # return render(request, "index.html", {"topn_search": topn_search})
 
 
 class SearchSuggestView(View):
@@ -48,7 +48,7 @@ class SearchView(View):
         # 获取topn个搜索词
         topn_search_clean = []
         topn_search = r.zrevrangebyscore(
-            "search_keywords_set", "+inf", "-inf", start=0, num=5)
+            "search_keywords_set", "+inf", "-inf", start=0, num=8)
         for topn_key in topn_search:
             topn_key = str(topn_key, encoding="utf-8")
             topn_search_clean.append(topn_key)
